@@ -1,0 +1,7 @@
+# Incoming webhooks have no Supabase user JWT. Their raw payloads are verified
+# against RESEND_WEBHOOK_SECRET in receive-email/index.ts instead.
+[functions.receive-email]
+verify_jwt = false
+
+[functions.send-email]
+verify_jwt = true
