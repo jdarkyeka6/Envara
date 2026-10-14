@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mailbox</title>
+<style>
+:root{--bg:#F3F6FA;--panel:#fff;--ink:#12202F;--mute:#5B6B7D;--line:#D5DCE6;--accent:#0F766E;--accent-ink:#fff;--sel:#E3F4EF;--unread:#fff;--star:#D97706;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0D1520;--panel:#142033;--ink:#E8EEF5;--mute:#9AABBD;--line:#263A52;--accent:#2DD4BF;--accent-ink:#06201C;--sel:#16384A;--unread:#142033;--star:#FBBF24}}
+:root[data-theme="dark"]{--bg:#0D1520;--panel:#142033;--ink:#E8EEF5;--mute:#9AABBD;--line:#263A52;--accent:#2DD4BF;--accent-ink:#06201C;--sel:#16384A;--unread:#142033;--star:#FBBF24}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.app{display:grid;grid-template-columns:210px 340px 1fr;height:100%}
+.side{padding:16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:6px;background:var(--panel)}
+.brand{font-weight:700;font-size:20px;margin:2px 0 10px}
+.addr{font-size:12px;color:var(--mute);margin:-8px 0 10px;word-break:break-all}
+.compose{background:var(--accent);color:var(--accent-ink);border:0;border-radius:12px;padding:11px 14px;font-weight:700;margin-bottom:8px;min-height:44px}
+.folder{display:flex;justify-content:space-between;align-items:center;background:none;border:0;border-radius:10px;padding:10px 12px;text-align:left;min-height:44px}
+.folder:hover{background:var(--sel)}
+.folder.on{background:var(--sel);font-weight:700}
+.count{font-size:12px;color:var(--mute)}
+.list{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--bg)}
+.search{margin:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);min-height:44px}
+.rows{overflow:auto;flex:1}
+.row{display:grid;grid-template-columns:28px 1fr auto;gap:2px 8px;padding:10px 14px 10px 8px;border-bottom:1px solid var(--line);cursor:pointer;background:var(--panel);width:100%;text-align:left;border-left:0;border-right:0;border-top:0;border-radius:0}
+.row.unread{font-weight:700}
+.row.on{background:var(--sel)}
+.row .from{grid-column:2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .date{grid-column:3;font-size:12px;color:var(--mute);font-weight:400}
+.row .subj{grid-column:2/4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:inherit}
+.row .snip{grid-column:2/4;color:var(--mute);font-weight:400;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.star{grid-row:1/4;background:none;border:0;font-size:18px;color:var(--mute);min-width:44px;min-height:44px;margin:-8px 0 0 -10px}
+.star.on{color:var(--star)}
+.read{padding:24px 28px;overflow:auto;background:var(--panel);min-height:0}
+.empty{color:var(--mute);margin:20vh auto;text-align:center}
+.read h2{margin:0 0 6px;font-size:22px}
+.meta{color:var(--mute);font-size:13px;margin-bottom:14px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tools button,.back{border:1px solid var(--line);background:none;border-radius:10px;padding:8px 12px;min-height:44px}
+.body{white-space:pre-wrap;max-width:68ch}
+.back{display:none;margin-bottom:12px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:flex-end;padding:16px}
+.modal.open{display:flex}
+.win{background:var(--panel);border:1px solid var(--line);border-radius:14px;width:min(520px,100%);padding:16px;display:flex;flex-direction:column;gap:10px;max-height:90%}
+.win input,.win textarea{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg);width:100%;min-height:44px}
+.win textarea{min-height:200px;resize:vertical}
+.win .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.win .acts button{border:1px solid var(--line);background:none;border-radius:10px;padding:8px 14px;min-height:44px}
+.win .acts .send{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+@media (max-width:800px){
+.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+.side{flex-direction:row;overflow-x:auto;align-items:center;border-right:0;border-bottom:1px solid var(--line);padding:10px}
+.brand,.addr{display:none}
+.compose{margin:0 6px 0 0;white-space:nowrap}
+.folder{white-space:nowrap}
+.list,.read{grid-row:2;grid-column:1}
+.read{display:none}
+.app.reading .list{display:none}
+.app.reading .read{display:block}
+.back{display:inline-block}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <nav class="side" id="side" aria-label="Folders">
+    <div class="brand">Mailbox</div>
+    <div class="addr">you@yourdomain.com</div>
+    <button class="compose" id="compose">Compose</button>
+  </nav>
+  <section class="list">
+    <input class="search" id="q" type="search" placeholder="Search mail" aria-label="Search mail">
+    <div class="rows" id="rows"></div>
+  </section>
+  <main class="read" id="read"></main>
+</div>
+
+<div class="modal" id="modal">
+  <div class="win" role="dialog" aria-label="New message">
+    <strong>New message</strong>
+    <input id="to" placeholder="To" aria-label="To">
+    <input id="subject" placeholder="Subject" aria-label="Subject">
+    <textarea id="text" placeholder="Write your message" aria-label="Message"></textarea>
+    <div class="acts">
+      <button id="discard">Discard</button>
+      <button id="draft">Save draft</button>
+      <button class="send" id="send">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var YOU = "you@yourdomain.com";
+var now = Date.now(), H = 3600000, D = 24 * H;
+var mails = [
+  {id:1, folder:"inbox", from:"Sample Sender <hello@example.com>", to:YOU, subject:"Welcome to your new inbox", body:"This is sample mail so you can see how the app looks.\n\nIn the next phase, real messages will arrive here instead.", at:now-2*H, read:false, star:true},
+  {id:2, folder:"inbox", from:"Team Updates <team@example.com>", to:YOU, subject:"Your weekly summary", body:"Here is where a longer message would go.\n\nLine breaks are kept, so letters look the way they were written.", at:now-1*D, read:false, star:false},
+  {id:3, folder:"inbox", from:"A Friend <friend@example.com>", to:YOU, subject:"Are you coming on Saturday?", body:"Let me know so I can save you a spot!", at:now-3*D, read:true, star:false},
+  {id:4, folder:"sent", from:YOU, to:"friend@example.com", subject:"Re: Saturday", body:"Yes, I'll be there.", at:now-2*D, read:true, star:false}
+];
+var folders = [["inbox","Inbox"],["starred","Starred"],["sent","Sent"],["drafts","Drafts"],["trash","Trash"]];
+var cur = "inbox", sel = null, nextId = 100;
+var $ = function(id){return document.getElementById(id)};
+
+function el(tag, cls, text){var e=document.createElement(tag); if(cls)e.className=cls; if(text!==undefined)e.textContent=text; return e}
+function nameOf(a){var m=/^(.*?)\s*<.*>$/.exec(a); return m && m[1] ? m[1] : a}
+function fmt(t){var d=new Date(t), n=new Date(); return d.toDateString()===n.toDateString() ? d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}) : d.toLocaleDateString([], {month:"short",day:"numeric"})}
+function inFolder(m){
+  if(cur==="starred") return m.star && m.folder!=="trash";
+  return m.folder===cur;
+}
+function visible(){
+  var q = $("q").value.trim().toLowerCase();
+  return mails.filter(inFolder).filter(function(m){
+    return !q || (m.subject+" "+m.from+" "+m.to+" "+m.body).toLowerCase().indexOf(q)>-1;
+  }).sort(function(a,b){return b.at-a.at});
+}
+function drawSide(){
+  var side=$("side");
+  Array.prototype.slice.call(side.querySelectorAll(".folder")).forEach(function(n){n.remove()});
+  folders.forEach(function(f){
+    var b=el("button","folder"+(cur===f[0]?" on":""));
+    b.appendChild(el("span","",f[1]));
+    var n = f[0]==="inbox" ? mails.filter(function(m){return m.folder==="inbox"&&!m.read}).length : 0;
+    if(n) b.appendChild(el("span","count",String(n)));
+    b.onclick=function(){cur=f[0];sel=null;$("app").classList.remove("reading");draw()};
+    side.appendChild(b);
+  });
+}
+function drawList(){
+  var rows=$("rows"); rows.textContent="";
+  var list=visible();
+  if(!list.length){rows.appendChild(el("div","empty","Nothing here yet"));return}
+  list.forEach(function(m){
+    var r=el("div","row"+(m.read?"":" unread")+(sel===m.id?" on":""));
+    r.setAttribute("role","button"); r.tabIndex=0;
+    var s=el("button","star"+(m.star?" on":""), m.star?"\u2605":"\u2606");
+    s.setAttribute("aria-label", m.star?"Unstar":"Star");
+    s.onclick=function(e){e.stopPropagation();m.star=!m.star;draw()};
+    r.appendChild(s);
+    r.appendChild(el("div","from", m.folder==="sent"||m.folder==="drafts" ? "To: "+(m.to||"(no recipient)") : nameOf(m.from)));
+    r.appendChild(el("div","date",fmt(m.at)));
+    r.appendChild(el("div","subj",m.subject||"(no subject)"));
+    r.appendChild(el("div","snip",m.body.replace(/\s+/g," ")));
+    var open=function(){sel=m.id;m.read=true;$("app").classList.add("reading");draw()};
+    r.onclick=open;
+    r.onkeydown=function(e){if(e.key==="Enter")open()};
+    rows.appendChild(r);
+  });
+}
+function drawRead(){
+  var p=$("read"); p.textContent="";
+  var m=mails.filter(function(x){return x.id===sel})[0];
+  if(!m){p.appendChild(el("div","empty","Select a message to read it"));return}
+  var back=el("button","back","\u2190 Back"); back.onclick=function(){sel=null;$("app").classList.remove("reading");draw()};
+  p.appendChild(back);
+  p.appendChild(el("h2","",m.subject||"(no subject)"));
+  p.appendChild(el("div","meta","From "+m.from+"  \u00b7  To "+(m.to||"(no recipient)")+"  \u00b7  "+new Date(m.at).toLocaleString()));
+  var t=el("div","tools");
+  var add=function(label,fn){var b=el("button","",label);b.onclick=fn;t.appendChild(b)};
+  if(m.folder==="drafts") add("Edit draft",function(){openCompose(m)});
+  else add("Reply",function(){openCompose({to:nameToAddr(m.from),subject:"Re: "+m.subject.replace(/^Re:\s*/,""),body:""})});
+  add("Mark unread",function(){m.read=false;sel=null;$("app").classList.remove("reading");draw()});
+  if(m.folder==="trash"){
+    add("Restore",function(){m.folder=m.from===YOU?"sent":"inbox";sel=null;$("app").classList.remove("reading");draw()});
+    add("Delete forever",function(){mails=mails.filter(function(x){return x!==m});sel=null;$("app").classList.remove("reading");draw()});
+  } else add("Move to trash",function(){m.folder="trash";sel=null;$("app").classList.remove("reading");draw()});
+  p.appendChild(t);
+  p.appendChild(el("div","body",m.body));
+}
+function nameToAddr(a){var m=/<(.*)>/.exec(a);return m?m[1]:a}
+function draw(){drawSide();drawList();drawRead()}
+
+var editing=null;
+function openCompose(m){
+  editing = m && m.folder==="drafts" ? m : null;
+  $("to").value=m?m.to||"":""; $("subject").value=m?m.subject||"":""; $("text").value=m?m.body||"":"";
+  $("modal").classList.add("open"); $("to").focus();
+}
+function closeCompose(){$("modal").classList.remove("open");editing=null}
+function save(folder){
+  var rec=editing||{id:nextId++,from:YOU,read:true,star:false};
+  rec.folder=folder; rec.to=$("to").value.trim(); rec.subject=$("subject").value.trim(); rec.body=$("text").value; rec.at=Date.now();
+  if(!editing) mails.push(rec);
+  cur=folder; sel=null; closeCompose(); draw();
+}
+$("compose").onclick=function(){openCompose(null)};
+$("discard").onclick=closeCompose;
+$("draft").onclick=function(){save("drafts")};
+$("send").onclick=function(){
+  if(!$("to").value.trim()){$("to").focus();return}
+  save("sent");
+};
+$("q").oninput=draw;
+$("modal").onclick=function(e){if(e.target===$("modal"))closeCompose()};
+draw();
+</script>
+</body>
+</html>
