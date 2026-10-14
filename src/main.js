@@ -57,7 +57,7 @@ const sidebarFolders = [
 const folderTitles = Object.fromEntries(sidebarFolders.map(([id,label]) => [id,label]))
 let toastTimer
 let state = {
-  session: null, folder: 'inbox', filter: 'all', query: '', selected: null,
+  session: null, mailboxIdentity: '', folder: 'inbox', filter: 'all', query: '', selected: null,
   checked: new Set(), compose: null, showSettings: false, showHelp: false,
   sidebarOpen: false, mobilePane: 'list', error: '', loading: false,
   authMode: 'login', authError: '', busy: false,
@@ -80,7 +80,7 @@ const persistDemo = () => {
   catch { notify('Demo storage is full or unavailable.', 'error') }
 }
 const currentUser = () => state.session?.user
-const mailboxAddress = () => currentUser()?.email || 'you@envara.demo'
+const mailboxAddress = () => state.mailboxIdentity || currentUser()?.email || 'you@envara.demo'
 const composeAvailable = () => demo || sendEnabled
 
 function notify(message, kind = 'info') {
@@ -274,6 +274,8 @@ function render({focusSearch = false} = {}) {
 async function load() {
   if (demo) { state.messages = loadDemo(); state.error = ''; render(); return }
   if (!currentUser()) return
+  const mailboxLookup = await sb.from('mailboxes').select('address').eq('user_id', currentUser().id).order('created_at').limit(1).maybeSingle()
+  state.mailboxIdentity = mailboxLookup.data?.address || ''
   const { data, error } = await sb.from('messages').select('*')
     .eq('user_id', currentUser().id).order('created_at', {ascending:false}).limit(1000)
   if (error) {
@@ -604,6 +606,7 @@ async function boot(){
     setTimeout(async()=>{
       if(session?.user?.id === state.session?.user?.id && session?.access_token===state.session?.access_token) return
       state.session=session;state.selected=null;state.checked.clear();state.mobilePane='list'
+      if(!session) state.mailboxIdentity=''
       if(session) await load()
       else {state.messages=[];render()}
     },0)
