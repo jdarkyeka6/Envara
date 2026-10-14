@@ -70,6 +70,10 @@ alter table public.messages enable row level security;
 alter table public.mailboxes enable row level security;
 alter table public.mail_send_log enable row level security;
 
+-- Make this script safe to reapply after policy changes.
+drop policy if exists envara_mailboxes_select on public.mailboxes;
+drop policy if exists envara_send_log_select on public.mail_send_log;
+
 -- Messages are private to their owner, even if another user knows an ID.
 create policy envara_messages_select on public.messages for select to authenticated
   using (user_id = (select auth.uid()));
