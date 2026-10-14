@@ -111,18 +111,20 @@ function folderLink(id, label, symbol, counts) {
 function renderAuth() {
   const signup = state.authMode === 'signup'
   const reset = state.authMode === 'reset'
+  const recovery = state.authMode === 'recovery'
   $('app').innerHTML = '<main class="auth-page"><div class="auth-glow glow-one"></div><div class="auth-glow glow-two"></div>' +
     '<div class="auth-brand"><span class="brand-mark">' + icon('mail',26) + '</span><span>envara<span class="brand-dot">.</span></span></div>' +
     '<section class="auth-card"><div class="eyebrow">YOUR MAIL, A LITTLE MORE HUMAN</div>' +
-    '<h1>' + (reset ? 'Reset your password.' : signup ? 'Make yourself at home.' : 'Welcome back.') + '</h1>' +
-    '<p>' + (reset ? 'We will email you a recovery link.' : signup ? 'A calmer way to keep on top of things.' : 'Everything important, beautifully in one place.') + '</p>' +
-    '<form id="auth-form" class="auth-form"><label for="auth-email">Email address</label><input required id="auth-email" type="email" autocomplete="username" placeholder="you@example.com">' +
-    (!reset ? '<label for="auth-password">Password</label><input required minlength="6" id="auth-password" type="password" autocomplete="' + (signup ? 'new-password' : 'current-password') + '" placeholder="Enter your password">' : '') +
+    '<h1>' + (recovery ? 'Choose a new password.' : reset ? 'Reset your password.' : signup ? 'Make yourself at home.' : 'Welcome back.') + '</h1>' +
+    '<p>' + (recovery ? 'Enter a strong new password to protect your account.' : reset ? 'We will email you a recovery link.' : signup ? 'A calmer way to keep on top of things.' : 'Everything important, beautifully in one place.') + '</p>' +
+    '<form id="auth-form" class="auth-form">' +
+    (recovery ? '' : '<label for="auth-email">Email address</label><input required id="auth-email" type="email" autocomplete="username" placeholder="you@example.com">') +
+    ((reset) ? '' : '<label for="auth-password">' + (recovery ? 'New password' : 'Password') + '</label><input required minlength="8" id="auth-password" type="password" autocomplete="' + (signup || recovery ? 'new-password' : 'current-password') + '" placeholder="Minimum eight characters">') +
     '<div class="auth-error" role="alert">' + h(state.authError) + '</div>' +
     '<button class="primary auth-submit" type="submit"' + (state.busy ? ' disabled' : '') + '>' +
-    (state.busy ? 'Please wait…' : reset ? 'Send recovery link' : signup ? 'Create account' : 'Sign in') + ' ' + icon('right',17) + '</button></form>' +
+    (state.busy ? 'Please wait…' : recovery ? 'Update password' : reset ? 'Send recovery link' : signup ? 'Create account' : 'Sign in') + ' ' + icon('right',17) + '</button></form>' +
     '<div class="auth-links">' +
-    (signup || reset ? button('auth-login','Sign in instead','','text-button') : button('auth-signup','Create account','','text-button') + button('auth-reset','Forgot password?','','text-button')) +
+    (recovery ? '' : signup || reset ? button('auth-login','Sign in instead','','text-button') : button('auth-signup','Create account','','text-button') + button('auth-reset','Forgot password?','','text-button')) +
     '</div></section><div class="auth-foot">Envara • Simple by design, private by default</div></main><div id="toast" class="toast" role="status"></div>'
 }
 function renderNav() {
@@ -265,7 +267,7 @@ function renderApp() {
   }
 }
 function render({focusSearch = false} = {}) {
-  if (!demo && !state.session) renderAuth()
+  if (state.authMode === 'recovery' || (!demo && !state.session)) renderAuth()
   else renderApp()
   if (focusSearch) { $('search')?.focus(); const node=$('search'); node?.setSelectionRange(node.value.length,node.value.length) }
 }
@@ -522,11 +524,14 @@ async function submitAuth(e) {
   if(submit){submit.disabled=true;submit.textContent='Please wait…'}
   try {
     let response
-    if(state.authMode==='signup') response=await sb.auth.signUp({email,password})
+    if(state.authMode==='recovery') response=await sb.auth.updateUser({password})
+    else if(state.authMode==='signup') response=await sb.auth.signUp({email,password})
     else if(state.authMode==='reset') response=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin})
     else response=await sb.auth.signInWithPassword({email,password})
     if(response.error) throw response.error
-    if(state.authMode==='reset'){
+    if(state.authMode==='recovery'){
+      state.authMode='login';render();notify('Password updated successfully.')
+    } else if(state.authMode==='reset'){
       state.authMode='login';state.authError='Recovery link requested. Check your email.'
       render()
     } else if(state.authMode==='signup' && !response.data?.session){
@@ -591,7 +596,11 @@ async function boot(){
   attachEvents()
   if(demo){state.messages=loadDemo();render();return}
   render()
-  sb.auth.onAuthStateChange((_event,session)=>{
+  sb.auth.onAuthStateChange((event,session)=>{
+    if(event==='PASSWORD_RECOVERY'){
+      setTimeout(()=>{state.session=session;state.authMode='recovery';render()},0)
+      return
+    }
     setTimeout(async()=>{
       if(session?.user?.id === state.session?.user?.id && session?.access_token===state.session?.access_token) return
       state.session=session;state.selected=null;state.checked.clear();state.mobilePane='list'
