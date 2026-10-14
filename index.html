@@ -1,46 +1,15 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Envara</title>
-</head>
-<body>
-<div class="login" id="login" hidden>
-  <form id="lf">
-    <h1>Envara</h1>
-    <input id="em" type="email" placeholder="Email" autocomplete="username" required aria-label="Email">
-    <input id="pw" type="password" placeholder="Password" autocomplete="current-password" required aria-label="Password">
-    <div class="err" id="err"></div>
-    <button type="submit">Log in</button>
-  </form>
-</div>
-<div class="app" id="app" hidden>
-  <nav class="side" id="side" aria-label="Folders">
-    <div class="brand">Envara</div>
-    <div class="addr" id="addr"></div>
-    <button class="compose" id="compose">Compose</button>
-  </nav>
-  <section class="list">
-    <input class="search" id="q" type="search" placeholder="Search mail" aria-label="Search mail">
-    <div class="rows" id="rows"></div>
-  </section>
-  <main class="read" id="read"></main>
-</div>
-
-<div class="modal" id="modal">
-  <div class="win" role="dialog" aria-label="New message">
-    <strong>New message</strong>
-    <input id="to" placeholder="To" aria-label="To">
-    <input id="subject" placeholder="Subject" aria-label="Subject">
-    <textarea id="text" placeholder="Write your message" aria-label="Message"></textarea>
-    <div class="acts">
-      <button id="discard">Discard</button>
-      <button id="draft">Save draft</button>
-      <button class="send" id="send">Send</button>
-    </div>
-  </div>
-</div>
-<script type="module" src="/src/main.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#101d2b">
+    <meta name="description" content="Envara. An email space designed for clarity.">
+    <title>Envara | Your inbox, beautifully organised</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  </head>
+  <body>
+    <div id="app"><div class="boot">Opening Envara…</div></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>
