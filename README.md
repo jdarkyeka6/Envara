@@ -21,7 +21,7 @@ A calmer, more thoughtfully designed email experience. A responsive Vite app wit
 
 ## Local demo
 
-Requires Node.js 20 or newer.
+Requires Node.js 20.19+ or 22.12+ (Vite 8).
 
     npm install
     npm run dev
