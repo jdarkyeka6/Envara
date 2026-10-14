@@ -402,7 +402,7 @@ async function sendMessage() {
       }
       persistDemo()
     } else {
-      const { data, error } = await sb.functions.invoke('send-email',{body:fields})
+      const { data, error } = await sb.functions.invoke('send-email',{body:{...fields,requestId:state.compose.requestId}})
       if(error) throw error
       if(!data?.success) throw new Error(data?.error || 'Email service did not confirm delivery.')
       if(state.compose.editingId) {
@@ -415,10 +415,13 @@ async function sendMessage() {
     notify(demo ? 'Demo send complete. No real email was delivered.' : 'Email accepted by your delivery provider.')
   } catch (err) {
     notify('Email was not confirmed as sent: '+(err.message||'Unknown error'),'error')
-  } finally {state.busy=false}
+  } finally {
+    state.busy=false
+    if(state.compose && sendButton){sendButton.disabled=false;sendButton.innerHTML=icon('send',17)+' Send email'}
+  }
 }
 function openCompose(from=null) {
-  state.compose=from||{to:'',subject:'',body:'',editingId:null}
+  state.compose={...(from||{to:'',subject:'',body:'',editingId:null}),requestId:crypto.randomUUID()}
   state.sidebarOpen=false
   render()
   $('compose-to')?.focus()
